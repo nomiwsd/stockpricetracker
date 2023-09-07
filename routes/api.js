@@ -9,10 +9,10 @@ const stockSchema=new mongoose.Schema(
   likes:{type:[String],default:[]}
   })
 
-  const stock=mongoose.model('stock',stockSchema);
+  const Stock=mongoose.model('stock',stockSchema);
 
   function saveStock(code,like,ip){
-    return stock.findOne({code:code})
+    return Stock.findOne({code:code})
     .then(
       stock=>{
         if(!stock){
@@ -30,16 +30,18 @@ const stockSchema=new mongoose.Schema(
   }
 
 function parseData(data){
-   let i=0;
+//  console.log(data);
+
+  let i=0;
    let stockData=[];
    let likes=[];
    while(i<data.lenght){
     let stock={
-      stock:data[i].code,price:parseFloat(data[i+1])
-    }
+      stock:data[i].code,price: JSON.parse(data[i+1]).close};
     likes.push(data[i].likes.lenght);
     stockData.push(stock);
     i += 2;
+    
    }
    if(likes.length>1){
     stockData[0].rel_likes=likes[0]-likes[1];
@@ -49,8 +51,10 @@ function parseData(data){
     stockData[0].likes=likes[0];
     stockData=stockData[0];
    }
+  //  console.log(stockData);
    return stockData;
-}
+
+  }
 
 module.exports = function (app) {
 app.get('/api/testing',(req,res)=>{
@@ -66,7 +70,7 @@ app.get('/api/testing',(req,res)=>{
       let promises=[];
       code.forEach(code=>{
         promises.push(saveStock(code.toUpperCase(),req.query.like,req.ip));
-        let url='';
+        let url='https://stock-price-checker-proxy.freecodecamp.rocks/v1/stock/${code.toUpperCase()}/quote';
         promises.push(request(url))
       }
       )
@@ -79,6 +83,7 @@ app.get('/api/testing',(req,res)=>{
         console.log(err);
         res.send(err);
       })
+
     });
     
 };
